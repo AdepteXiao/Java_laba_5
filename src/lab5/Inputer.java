@@ -1,4 +1,4 @@
-package com.lab2;
+package lab5;
 
 import java.util.Objects;
 import java.util.Scanner;
@@ -21,7 +21,7 @@ public class Inputer {
     int res;
     try {
       res = Integer.parseInt(this.sc.nextLine());
-    } catch (Exception e) {
+    } catch (Exception exc) {
       res = -1;
     }
     return res;
@@ -36,7 +36,7 @@ public class Inputer {
     float  res;
     try {
       res = Float.parseFloat(sc.nextLine().replace(",", "."));
-    } catch (Exception e) {
+    } catch (Exception exc) {
       res = -1f;
     }
     return res;

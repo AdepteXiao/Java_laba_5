@@ -1,4 +1,4 @@
-package com.lab2;
+package lab5;
 
 import java.text.DecimalFormat;
 
@@ -41,19 +41,24 @@ public class Furniture {
   /**
    * Конструктор создающий заполненный экземпляр класса
    *
+   * @throws NegativeIntException - исключение при неверном вводе года
+   * @throws NegativeFloatException - исключение при неверном вводе цены
    * @param price    Цена мебели
    * @param prodYear Год производства мебели
    * @param name     Название мебели
    * @param country  Страна производитель мебели
    */
-  public Furniture(float price, int prodYear, String name, String country) {
-    if (price > 0 &&
-        prodYear > 0 &&
-        prodYear < 2023 &&
-        (name != null) &&
-        (country != null)) {
-      this.price = price;
-      this.prodYear = prodYear;
+  public Furniture(float price, int prodYear, String name, String country)
+      throws NegativeFloatException, NegativeIntException {
+    if (price <= 0){
+      throw new NegativeFloatException("Цена введена неверно:", price);
+    }
+    if (prodYear <= 0){
+      throw new NegativeIntException("Год производства введен неверно:", prodYear);
+    }
+    this.price = price;
+    this.prodYear = prodYear;
+    if ((name != null) && (country != null)) {
       this.country = country;
       this.name = name;
     } else {
@@ -73,12 +78,14 @@ public class Furniture {
 
   /**
    * Метод установки значения цены мебели
-   *
+   * @throws NegativeFloatException - исключение при неверном вводе цены
    * @param price - цена мебели
    */
-  public void setPrice(float price) {
+  public void setPrice(float price) throws NegativeFloatException {
     if (price > 0) {
       this.price = price;
+    } else {
+      throw new NegativeFloatException("Цена не может быть отрицательной: ", price);
     }
   }
 
@@ -94,12 +101,15 @@ public class Furniture {
   /**
    * Метод установки значения года производства мебели
    *
+   * @throws NegativeIntException -исключение при неверном вводе года
    * @param prodYear - год производства мебели
    */
-  public void setProdYear(int prodYear) {
+  public void setProdYear(int prodYear) throws NegativeIntException{
     if (prodYear > 0 &&
         prodYear < 2023) {
       this.prodYear = prodYear;
+    } else {
+      throw new NegativeIntException("Год не может быть отрицательным: ", prodYear);
     }
   }
 
@@ -109,7 +119,7 @@ public class Furniture {
    * @return private String name - название мебели
    */
   public String getName() {
-    return name;
+    return this.name;
   }
 
   /**

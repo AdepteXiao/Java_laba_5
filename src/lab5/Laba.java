@@ -1,4 +1,4 @@
-package com.lab2;
+package lab5;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -11,7 +11,7 @@ import java.util.Comparator;
  */
 public class Laba {
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws NegativeFloatException, NegativeIntException {
     UI myUI = new UI();
 
     myUI.menu();
@@ -70,7 +70,7 @@ class UI implements menuEnum {
   /**
    * Метод основного меню работы
    */
-  public void menu() {
+  public void menu(){
     this.furnitureList.add(new Furniture());
     this.furnitureList.add(new Furniture());
     this.furnitureList.add(new Furniture());
@@ -88,20 +88,26 @@ class UI implements menuEnum {
           """);
 
       choice = inp.getInt();
-      switch (choice) {
-        case PRINT_FURNITURE -> this.printFurnitures();
-        case ADD_VOID_FURNITURE -> this.addVoidFurniture();
-        case ADD_FILLED_FURNITURE -> this.addParamFurniture();
-        case DELETE_FURNITURE -> this.deleteFurniture();
-        case EDIT_FURNITURE -> editFurniture();
-        case SORT_FURNITURE -> sortFurnitureList();
-        default -> {
-          if (choice != EXIT) {
-            this.out.println("Некорректный ввод");
+      try {
+        switch (choice) {
+          case PRINT_FURNITURE -> this.printFurnitures();
+          case ADD_VOID_FURNITURE -> this.addVoidFurniture();
+          case ADD_FILLED_FURNITURE -> this.addParamFurniture();
+          case DELETE_FURNITURE -> this.deleteFurniture();
+          case EDIT_FURNITURE -> editFurniture();
+          case SORT_FURNITURE -> sortFurnitureList();
+          default -> {
+            if (choice != EXIT) {
+              this.out.println("Некорректный ввод");
+            }
           }
         }
-
+      } catch (NegativeIntException | NegativeFloatException | FurnitureParamException | IndexErrorException exc) {
+        out.println("Ошибка ввода: \n" + exc.getMessage());
+      } catch (AssertionError exc) {
+        out.println(exc.getMessage());
       }
+
     } while (choice != EXIT);
   }
 
@@ -129,12 +135,15 @@ class UI implements menuEnum {
 
   /**
    * Метод удаления мебели из списка по индексу
+   * @throws IndexErrorException - исключение при неверном вводе индекса
+   * @throws AssertionError - исключение при попытке удаления мебели из пустого массива
    */
-  private void deleteFurniture() {
+  private void deleteFurniture() throws IndexErrorException, AssertionError{
+    assert !furnitureList.isEmpty() : "Список мебели пуст";
     out.println("Введите индекс мебели в списке:");
     int index = inp.getInt();
     if (index < 1 || index > furnitureList.size()) {
-      out.println("Некорректный индекс");
+      throw new IndexErrorException("Индекс указан неверно: ", index);
     } else {
       this.out.println(furnitureList.get(index - 1).getName() + " удален(а) из списка");
       furnitureList.remove(index - 1);
@@ -143,58 +152,33 @@ class UI implements menuEnum {
 
   /**
    * Метод добавления мебели с задаваемыми параметрами
+   * @throws FurnitureParamException - исключение при неверном вводе полей мебели
    */
-  private void addParamFurniture() {
-    Furniture newFurniture = new Furniture();
+  private void addParamFurniture() throws FurnitureParamException {
 
-    boolean isName = false,
-        isCountry = false,
-        isProdYear = false,
-        isPrice = false;
+    String name, country;
+    float price;
+    int prodYear;
 
-    while (!(isName & isCountry & isProdYear & isPrice)) {
+    out.println("Введите название:");
+    name = inp.getString();
 
-      if (!isName) {
-        this.out.println("Введите название:");
-        newFurniture.setName(this.inp.getString());
-        if (newFurniture.getName().equals("Без названия")) {
-          this.out.println("Некорректный ввод");
-        } else {
-          isName = true;
-        }
-      }
+    out.println("Введите страну:");
+    country = inp.getString();
 
-      if (!isCountry) {
-        this.out.println("Введите страну:");
-        newFurniture.setCountry(this.inp.getString());
-        if (newFurniture.getCountry().equals("Неизвестна")) {
-          this.out.println("Некорректный ввод");
-        } else {
-          isCountry = true;
-        }
-      }
+    out.println("Введите год:");
+    prodYear = inp.getInt();
 
-      if (!isProdYear) {
-        this.out.println("Введите год:");
-        newFurniture.setProdYear(this.inp.getInt());
-        if (newFurniture.getProdYear() == 0) {
-          this.out.println("Некорректный ввод");
-        } else {
-          isProdYear = true;
-        }
-      }
+    out.println("Введите цену:");
+    price = inp.getFloat();
 
-      if (!isPrice) {
-        this.out.println("Введите цену:");
-        newFurniture.setPrice(this.inp.getFloat());
-        if (newFurniture.getPrice() == 0) {
-          this.out.println("Некорректный ввод");
-        } else {
-          isPrice = true;
-        }
-      }
+    try {
+      furnitureList.add(new Furniture(price,
+          prodYear, name, country));
+    } catch (NegativeIntException | NegativeFloatException exc) {
+      throw new FurnitureParamException(
+          "Какое-то из полей заполнено неверно", exc);
     }
-    furnitureList.add(newFurniture);
   }
 
   /**
@@ -206,13 +190,18 @@ class UI implements menuEnum {
 
   /**
    * Метод редактирования любых полей человека
+   * @throws NegativeFloatException - Исключение при неверном вводе цены
+   * @throws NegativeIntException -  Исключение при неверном вводе года производства
+   * @throws AssertionError - Исключение при попытке изменения мебели в пустом массиве
+   * @throws IndexErrorException - Исключение при неверном вводе индекса
    */
-  private void editFurniture() {
+  private void editFurniture()
+      throws NegativeFloatException, NegativeIntException, AssertionError, IndexErrorException {
+    assert !furnitureList.isEmpty() : "Список мебели пуст";
     out.println("Введите индекс мебели в списке:");
     int index = inp.getInt();
     if (index < 1 || index > furnitureList.size()) {
-      out.println("Некорректный индекс");
-      return;
+      throw new IndexErrorException("Индекс указан неверно: ", index);
     }
     Furniture furnitureToEdit = this.furnitureList.get(index - 1);
     int choice;
@@ -232,7 +221,7 @@ class UI implements menuEnum {
         case CHANGE_YEAR -> changeProdYearHandler(furnitureToEdit);
         case CHANGE_PRICE -> changePriceHandler(furnitureToEdit);
         case EXIT_TO_MENU -> this.out.println("Редактирование завершено");
-        default -> this.out.println("Некорректный ввод!");
+        default -> this.out.println("Некорректный ввод");
       }
 
     } while (choice != EXIT_TO_MENU);
@@ -243,7 +232,7 @@ class UI implements menuEnum {
    *
    * @param furnitureToEdit Изменяемый экземпляр мебели
    */
-  private void changeNameHandler(Furniture furnitureToEdit) {
+  private void changeNameHandler(Furniture furnitureToEdit){
     this.out.println("Введите название:");
     furnitureToEdit.setName(this.inp.getString());
   }
@@ -262,9 +251,11 @@ class UI implements menuEnum {
   /**
    * Метод изменяющий год производства выбранной мебели
    *
+   * @throws NegativeIntException - Исключение при неверном вводе года произвдства
    * @param furnitureToEdit Изменяемый экземпляр мебели
    */
-  private void changeProdYearHandler(Furniture furnitureToEdit) {
+  private void changeProdYearHandler(Furniture furnitureToEdit)
+      throws NegativeIntException {
     this.out.println("Введите год производства:");
     furnitureToEdit.setProdYear(this.inp.getInt());
   }
@@ -272,9 +263,10 @@ class UI implements menuEnum {
   /**
    * Метод изменяющий цену выбранной мебели
    *
+   * @throws NegativeFloatException - исключение при неверном вводе цены
    * @param furnitureToEdit Изменяемый экземпляр мебели
    */
-  private void changePriceHandler(Furniture furnitureToEdit) {
+  private void changePriceHandler(Furniture furnitureToEdit) throws NegativeFloatException {
     this.out.println("Введите цену:");
     furnitureToEdit.setPrice(this.inp.getFloat());
   }
